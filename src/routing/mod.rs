@@ -52,9 +52,9 @@ struct RouteId(u64);
 
 impl RouteId {
     fn next() -> Self {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static ID: AtomicU64 = AtomicU64::new(0);
-        Self(ID.fetch_add(1, Ordering::SeqCst))
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static ID: AtomicU32 = AtomicU32::new(0);
+        Self(ID.fetch_add(1, Ordering::SeqCst) as u64)
     }
 }
 
