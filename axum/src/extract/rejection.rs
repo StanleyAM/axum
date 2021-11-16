@@ -1,10 +1,9 @@
 //! Rejection response types.
 
 use super::IntoResponse;
-use crate::BoxError;
 use crate::{
     body::{box_body, BoxBody},
-    Error,
+    BoxError, Error,
 };
 use bytes::Bytes;
 use http_body::Full;
@@ -268,6 +267,16 @@ composite_rejection! {
     /// [`Request<_>`]: http::Request
     pub enum RequestAlreadyExtracted {
         BodyAlreadyExtracted,
+        HeadersAlreadyExtracted,
+        ExtensionsAlreadyExtracted,
+    }
+}
+
+composite_rejection! {
+    /// Rejection used for [`http::request::Parts`].
+    ///
+    /// Contains one variant for each way the [`http::request::Parts`] extractor can fail.
+    pub enum RequestPartsAlreadyExtracted {
         HeadersAlreadyExtracted,
         ExtensionsAlreadyExtracted,
     }

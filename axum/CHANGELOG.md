@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Unreleased
 
-- None
+- None.
+
+# 0.3.3 (13. November, 2021)
+
+- Implement `FromRequest` for [`http::request::Parts`] so it can be used an
+  extractor ([#489])
+- Implement `IntoResponse` for `http::response::Parts` ([#490])
+
+[#489]: https://github.com/tokio-rs/axum/pull/489
+[#490]: https://github.com/tokio-rs/axum/pull/490
+[`http::request::Parts`]: https://docs.rs/http/latest/http/request/struct.Parts.html
 
 # 0.3.2 (08. November, 2021)
 

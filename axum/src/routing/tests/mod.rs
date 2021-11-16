@@ -1,23 +1,21 @@
-use crate::error_handling::HandleErrorLayer;
-use crate::test_helpers::*;
-use crate::BoxError;
 use crate::{
+    error_handling::HandleErrorLayer,
     extract::{self, Path},
     handler::Handler,
     response::IntoResponse,
     routing::{any, delete, get, on, patch, post, service_method_routing as service, MethodFilter},
-    Json, Router,
+    test_helpers::*,
+    BoxError, Json, Router,
 };
 use bytes::Bytes;
 use http::{header::HeaderMap, Method, Request, Response, StatusCode, Uri};
 use hyper::Body;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::future::Ready;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{
     convert::Infallible,
-    future::ready,
+    future::{ready, Ready},
+    sync::atomic::{AtomicUsize, Ordering},
     task::{Context, Poll},
     time::Duration,
 };
@@ -505,4 +503,37 @@ async fn route_layer() {
     // don't know currently since its just a generic `Service`
     let res = client.post("/foo").send().await;
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+#[should_panic(
+    expected = "Invalid route: insertion failed due to conflict with previously registered route: /foo"
+)]
+async fn conflicting_route() {
+    let app = Router::new()
+        .route("/foo", get(|| async {}))
+        .route("/foo", get(|| async {}));
+    TestClient::new(app);
+}
+
+#[tokio::test]
+#[should_panic(
+    expected = "Invalid route: insertion failed due to conflict with previously registered route: /*axum_nest. Note that `nest(\"/\", _)` conflicts with all routes. Use `Router::fallback` instead"
+)]
+async fn good_error_message_if_using_nest_root() {
+    let app = Router::new()
+        .nest("/", get(|| async {}))
+        .route("/", get(|| async {}));
+    TestClient::new(app);
+}
+
+#[tokio::test]
+#[should_panic(
+    expected = "Invalid route: insertion failed due to conflict with previously registered route: /*axum_nest. Note that `nest(\"/\", _)` conflicts with all routes. Use `Router::fallback` instead"
+)]
+async fn good_error_message_if_using_nest_root_when_merging() {
+    let one = Router::new().nest("/", get(|| async {}));
+    let two = Router::new().route("/", get(|| async {}));
+    let app = one.merge(two);
+    TestClient::new(app);
 }

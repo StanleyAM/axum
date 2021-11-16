@@ -35,7 +35,7 @@
 //!
 //! ## Debugging handler type errors
 //!
-//! For a function to used as a handler it must implement the [`Handler`] trait.
+//! For a function to be used as a handler it must implement the [`Handler`] trait.
 //! axum provides blanket implementations for functions that:
 //!
 //! - Are `async fn`s.
@@ -67,6 +67,8 @@
 //! This error doesn't tell you _why_ your function doesn't implement
 //! [`Handler`]. It's possible to improve the error with the [`debug_handler`]
 //! proc-macro from the [axum-debug] crate.
+//!
+//! [axum-debug]: https://docs.rs/axum-debug
 
 use crate::{
     body::{box_body, BoxBody},
@@ -405,8 +407,7 @@ mod tests {
 
     #[test]
     fn traits() {
-        use crate::routing::MethodRouter;
-        use crate::test_helpers::*;
+        use crate::{routing::MethodRouter, test_helpers::*};
         assert_send::<MethodRouter<(), NotSendSync, NotSendSync, ()>>();
         assert_sync::<MethodRouter<(), NotSendSync, NotSendSync, ()>>();
     }
