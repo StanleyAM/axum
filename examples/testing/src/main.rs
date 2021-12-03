@@ -47,8 +47,10 @@ fn app() -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::body::Body;
-    use axum::http::{self, Request, StatusCode};
+    use axum::{
+        body::Body,
+        http::{self, Request, StatusCode},
+    };
     use serde_json::{json, Value};
     use std::net::{SocketAddr, TcpListener};
     use tower::ServiceExt; // for `app.oneshot()`
@@ -79,7 +81,7 @@ mod tests {
                 Request::builder()
                     .method(http::Method::POST)
                     .uri("/json")
-                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .header(http::header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                     .body(Body::from(
                         serde_json::to_vec(&json!([1, 2, 3, 4])).unwrap(),
                     ))

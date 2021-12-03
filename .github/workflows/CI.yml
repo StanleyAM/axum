@@ -14,10 +14,10 @@ jobs:
     - uses: actions/checkout@master
     - uses: actions-rs/toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         override: true
         profile: minimal
-        components: clippy
+        components: clippy, rustfmt
     - uses: Swatinem/rust-cache@v1
     - name: Check
       uses: actions-rs/cargo@v1
@@ -41,9 +41,8 @@ jobs:
         profile: minimal
     - uses: Swatinem/rust-cache@v1
     - name: cargo doc
-      working-directory: ${{ matrix.subcrate }}
       env:
-          RUSTDOCFLAGS: "-D broken-intra-doc-links"
+        RUSTDOCFLAGS: "-D broken-intra-doc-links"
       run: cargo doc --all-features --no-deps
 
   cargo-hack:
@@ -60,16 +59,14 @@ jobs:
       run: |
         curl -LsSf https://github.com/taiki-e/cargo-hack/releases/latest/download/cargo-hack-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
     - name: cargo hack check
-      working-directory: ${{ matrix.subcrate }}
       run: cargo hack check --each-feature --no-dev-deps --all
 
   test-versions:
-    # Test against the stable, beta, and nightly Rust toolchains on ubuntu-latest.
     needs: check
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly, 1.54]
+        rust: [stable, beta, nightly]
     steps:
     - uses: actions/checkout@master
     - uses: actions-rs/toolchain@v1
@@ -83,6 +80,39 @@ jobs:
       with:
         command: test
         args: --all --all-features --all-targets
+
+  # some examples doesn't support 1.54 (such as async-graphql)
+  # so we only test axum itself on 1.54
+  test-msrv:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.54
+        override: true
+        profile: minimal
+    - uses: Swatinem/rust-cache@v1
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: >
+          -p axum
+          -p axum-extra
+          --all-features --all-targets
+    # the compiler errors are different on 1.54 which makes
+    # the trybuild tests in axum-debug fail, so just run the doc
+    # tests
+    - name: Run axum-debug doc tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: >
+          -p axum-debug
+          --doc
+          --all-features
 
   test-docs:
     needs: check
@@ -104,6 +134,15 @@ jobs:
   deny-check:
     name: cargo-deny check
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
     steps:
-    - uses: actions/checkout@v1
-    - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: actions/checkout@v2
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check ${{ matrix.checks }}
+          arguments: --all-features --manifest-path axum/Cargo.toml
